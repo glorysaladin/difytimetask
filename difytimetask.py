@@ -142,6 +142,7 @@ class difytimetask(Plugin):
 
     #处理时间任务
     def deal_timeTask(self, content, e_context: EventContext):
+        logger.info(f"start to add timeTask, content = {content}")
         # 如果是任务列表命令，直接调用获取任务列表的方法
         if content.strip() == "任务列表":
             self.get_timeTaskList(content, e_context)
@@ -177,7 +178,9 @@ class difytimetask(Plugin):
         group_title = None
         if group_match:
             group_title = group_match.group(1)
+            # 如果是任务列表命令，直接调用获取任务列表的方法
             group_id = self._get_group_id_by_title(group_title)  # 获取群 ID
+            logger.info(f"group_title = {group_title}, match group_id={group_id}")
             if group_id:
                 eventStr = eventStr.replace(f"group[{group_title}]", "").strip()
                 # 设置群 ID 和其他字段
@@ -366,6 +369,8 @@ class difytimetask(Plugin):
           
     #添加任务
     def add_timeTask(self, content, e_context: EventContext):
+        logger.info(f"start to add timeTask, content = {content}")
+        logger.error(f"start to add timeTask, content = {content}")
         # 失败时，默认提示
         defaultErrorMsg = "⏰定时任务指令格式异常😭，请核查！" + self.get_default_remind(TimeTaskRemindType.Add_Failed)
         
@@ -377,6 +382,7 @@ class difytimetask(Plugin):
         group_match = re.match(r'.*group\[([^\]]+)\]', eventStr)
         if group_match:
             group_title = group_match.group(1)
+            logger.info(f"[difytimetask] group_title : {group_title}")
             group_id = self._get_group_id_by_title(group_title)  # 获取群 ID
             if group_id:
                 eventStr = eventStr.replace(f"group[{group_title}]", "").strip()
@@ -882,18 +888,22 @@ class difytimetask(Plugin):
                     return None
     
                 # 分批获取详细信息（每次最多 20 个 wxid）
+                wxids_list=[]
                 for i in range(0, len(wxids), 20):
                     batch_wxids = wxids[i:i + 20]  # 每次最多 20 个 wxid
                     # 获取当前批次的详细信息
                     detail_response = self.client.get_detail_info(self.app_id, batch_wxids)
-                    logger.debug(f"[difytimetask] get_detail_info 返回数据: {detail_response}")
+                    logger.info(f"[difytimetask] get_detail_info 返回数据: {detail_response}")
                     if detail_response.get('ret') == 200:
                         details = detail_response.get('data', [])
                         # 遍历详细信息，查找匹配的群聊名称
                         for detail in details:
-                            logger.debug(f"[difytimetask] 当前群聊信息: {detail}")
-                            if detail.get('nickName') == group_title:
-                                return detail.get('userName')  # 返回群聊 wxid
+                            logger.info(f"[difytimetask] 当前群聊信息: {detail}")
+                            #if detail.get('nickName') == group_title:
+                            if re.match(group_title, detail.get('nickName')):
+                                #return detail.get('userName')  # 返回群聊 wxid
+                                wxids_list.append(detail.get('userName'))
+                return ",".join(wxids_list)
         except Exception as e:
             logger.error(f"[difytimetask] 获取群信息失败: {e}")
     
