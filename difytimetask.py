@@ -753,11 +753,13 @@ class difytimetask(Plugin):
             if self.conf.get("is_need_detailDeccription_whenNormalReply", True):
                 reply_text += f"【任务详情】："
 
-            reply_text += eventStr
+            #reply_text += eventStr
+            reply_text = ""
             replyType = ReplyType.TEXT
                 
-        #消息回复
-        self.replay_use_custom(model, reply_text, replyType, context)
+        if len(reply_text) > 0:
+            #消息回复
+            self.replay_use_custom(model, reply_text, replyType, context)
 
 
     #检查前缀是否匹配
@@ -893,12 +895,12 @@ class difytimetask(Plugin):
                     batch_wxids = wxids[i:i + 20]  # 每次最多 20 个 wxid
                     # 获取当前批次的详细信息
                     detail_response = self.client.get_detail_info(self.app_id, batch_wxids)
-                    logger.info(f"[difytimetask] get_detail_info 返回数据: {detail_response}")
+                    logger.debug(f"[difytimetask] get_detail_info 返回数据: {detail_response}")
                     if detail_response.get('ret') == 200:
                         details = detail_response.get('data', [])
                         # 遍历详细信息，查找匹配的群聊名称
                         for detail in details:
-                            logger.info(f"[difytimetask] 当前群聊信息: {detail}")
+                            logger.debug(f"[difytimetask] 当前群聊信息: {detail}")
                             #if detail.get('nickName') == group_title:
                             if re.match(group_title, detail.get('nickName')):
                                 #return detail.get('userName')  # 返回群聊 wxid
